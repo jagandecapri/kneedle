@@ -1,6 +1,9 @@
 package kneedle
 
-import "math"
+import (
+	"math"
+	"github.com/jagandecapri/vision/data"
+)
 
 /*
   Given set of values look for the elbow/knee points.
@@ -42,4 +45,29 @@ func findElbowIndex(data []float64) (bestIdx int){
 		}
 	}
 	return bestIdx
+}
+
+//Prepare prepares the data by smoothing, then normalising into unit range 0-1,
+//and finally, subtracting the y-value from the x-value where
+//smoothingWindow is the size of the smoothing window.
+func prepare(data [][]float64, smoothingWindow int) (normalisedData [][]float64){
+	//smooth the data to make local minimum/maximum easier to find (this is Step 1 in the paper)
+	smoothedData, _ := gaussianSmooth2d(data, smoothingWindow)
+
+	//prepare the data into the unit range (step 2 of paper)
+	normalisedData, _ = minmaxNormalise(smoothedData)
+
+	//subtract normalised x from normalised y (this is step 3 in the paper)
+	for i := 0; i < len(normalisedData); i++{
+		normalisedData[i][1] = normalisedData[i][1] - normalisedData[i][0]
+	}
+	return
+}
+
+func computeAverageVarianceX(data [][]float64) float64{
+	var sumVariance float64
+	for i := 0; i < len(data) - 1; i++{
+		sumVariance += data[i + 1][0] - data[i][0]
+	}
+	return sumVariance / float64((len(data) - 1))
 }
