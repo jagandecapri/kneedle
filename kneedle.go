@@ -2,11 +2,11 @@ package kneedle
 
 import (
 	"math"
-	"github.com/jagandecapri/vision/data"
+	"github.com/pkg/errors"
 )
 
 /*
-  Given set of values look for the elbow/knee points.
+  Given set of values, look for the elbow/knee points.
   See paper: "Finding a Kneedle in a Haystack: Detecting Knee Points in System Behavior"
   @author Jagatheesan
 */
@@ -70,4 +70,68 @@ func computeAverageVarianceX(data [][]float64) float64{
 		sumVariance += data[i + 1][0] - data[i][0]
 	}
 	return sumVariance / float64((len(data) - 1))
+}
+
+//Run takes in a 2D slice containing data where knee or elbow needs to be found.
+//The function also takes in the number of "flat" points that is required before considering
+//a point as knee or elbow. The smootingWindow parameter is used to indicate the avarage used for
+//the Gaussian kernel average smoother (you can try with 3 to begin with). The findElbows parameter indicates
+//whether to find an elbow or a knee when the value of parameter is true or false respectively
+func Run(data [][]float64, s float64, smoothingWindow int, findElbows bool) (localMinMaxPts [][]float64, err error){
+
+	if(len(data) == 0){
+		err = errors.New("Cannot find elbow or knee points in empty data.")
+		return
+	}
+
+	if(len(data[0]) != 2){
+		err = errors.New("Cannot run Kneedle, this method expects all data to be 2d.")
+		return
+	}
+
+	//do steps 1,2,3 of the paper in the prepare method
+	normalisedData := prepare(data, smoothingWindow)
+	//find candidate indices (this is step 4 in the paper)
+
+	candidateIndices := findCandidateIndices(normalisedData, findElbows)
+	//go through each candidate index, i, and see if the indices after i are satisfy the threshold requirement
+	//(this is step 5 in the paper)
+	step := computeAverageVarianceX(normalisedData)
+
+	if findElbows{
+		step = step * s
+	} else {
+		step = step * -s
+	}
+
+	//check each candidate to see if it is a real elbow/knee
+	//(this is step 6 in the paper)
+	for i := 0; i < len(candidateIndices); i++{
+		candidateIdx := candidateIndices[i]
+		var endIdx int
+
+		if i + 1 < len(candidateIndices){
+			endIdx = candidateIndices[i+1]
+		} else {
+			endIdx = len(data)
+		}
+
+		threshold := normalisedData[candidateIdx][1] + step
+
+		for j := candidateIdx + 1; j < endIdx; j++{
+			var isRealElbowOrKnee bool
+			if findElbows{
+				isRealElbowOrKnee = normalisedData[j][1] > threshold
+			} else {
+				isRealElbowOrKnee = normalisedData[j][1] < threshold
+			}
+
+			if isRealElbowOrKnee {
+				localMinMaxPts = append(localMinMaxPts, data[candidateIdx])
+				break
+			}
+		}
+	}
+
+	return
 }
