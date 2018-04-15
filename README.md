@@ -22,11 +22,11 @@ Use `go get github.com/jagandecapri/kneedle`
 	{1,1},
 	}
 	
-    kneePoints, _ := kneedle.Run(testData, 1, 1, false)
+    	kneePoints, _ := kneedle.Run(testData, 1, 1, false)
     
-    for _, kneePoint := range kneePoints{
-        fmt.Println("Knee point:", kneePoint)
-    }
+    	for _, kneePoint := range kneePoints{
+        	fmt.Println("Knee point:", kneePoint)
+    	}
 ```
 
 # References
