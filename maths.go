@@ -67,3 +67,61 @@ func gaussianSmooth2d(data [][]float64, w int) (smoothed [][]float64, err error)
 
 	return
 }
+
+// minmaxNormalise performs min-max normalisation on n-dimensional data (as long as the dimensionality is uniform, that is, all data is 2d or all 3d etc.).
+// For reference, refer to <a href="https://en.wikipedia.org/wiki/Feature_scaling#Rescaling">Wikipedia article about feature re-scaling.</a>
+func minmaxNormalise(data [][]float64) (outputNormalised [][]float64, err error){
+
+	dataSize := len(data)
+
+	if(dataSize == 0){
+		err = errors.New("Cannot smooth empty data.")
+		return
+	}
+
+	nDims := len(data[0])
+
+	if(nDims == 0){
+		err = errors.New("Cannot smooth a data point with no values. " +
+		"Uniformly populate every entry in your data with 1 or more dimensions.")
+		return
+	}
+
+//1) get min and max for each dimension of the data
+
+	minEachDim := make([]float64, nDims)
+	maxEachDim := make([]float64, nDims)
+	for i := 0; i < nDims; i++ {
+		minEachDim[i] = math.MaxFloat64
+		maxEachDim[i] = math.SmallestNonzeroFloat64
+	}
+
+	for _, coords := range data{
+		for n := 0; n < nDims; n++ {
+			v := coords[n]
+			if (v < minEachDim[n]) {
+				minEachDim[n] = v
+			}
+			if (v > maxEachDim[n]) {
+				maxEachDim[n] = v
+			}
+		}
+	}
+
+	//2) normalise the data using the min and max
+	rangeEachDim := make([]float64, nDims)
+	for n := 0; n < nDims; n++{
+		rangeEachDim[n] = maxEachDim[n] - minEachDim[n]
+	}
+
+	outputNormalised = make([][]float64, dataSize)
+	for i := 0; i < dataSize; i++{
+		tmp := make([]float64, nDims)
+		for n := 0; n < nDims; n++{
+			//normalising step
+			tmp[n] = (data[i][n] - minEachDim[n]) / rangeEachDim[n]
+		}
+		outputNormalised[i] = tmp
+	}
+	return
+}
