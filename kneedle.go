@@ -77,7 +77,7 @@ func computeAverageVarianceX(data [][]float64) float64{
 //a point as knee or elbow. The smootingWindow parameter is used to indicate the avarage used for
 //the Gaussian kernel average smoother (you can try with 3 to begin with). The findElbows parameter indicates
 //whether to find an elbow or a knee when the value of parameter is true or false respectively
-func Run(data [][]float64, s float64, smoothingWindow int, findElbows bool) (localMinMaxPts [][]float64, err error){
+func Run(data [][]float64, s int, smoothingWindow int, findElbows bool) (localMinMaxPts [][]float64, err error){
 
 	if(len(data) == 0){
 		err = errors.New("Cannot find elbow or knee points in empty data.")
@@ -99,9 +99,9 @@ func Run(data [][]float64, s float64, smoothingWindow int, findElbows bool) (loc
 	step := computeAverageVarianceX(normalisedData)
 
 	if findElbows{
-		step = step * s
+		step = step * float64(s)
 	} else {
-		step = step * -s
+		step = step * -float64(s)
 	}
 
 	//check each candidate to see if it is a real elbow/knee
